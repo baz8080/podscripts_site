@@ -2,10 +2,9 @@ require 'rake'
 require 'json'
 require 'front_matter_parser'
 require 'open3'
+require "fileutils"
 
-desc "Create corpus for search"
-file './corpus.json' => ['./', *Rake::FileList['_posts/**/*.md']] do |md_file|
-    puts("processing file")
+file './corpus.json' => [*Rake::FileList['_posts/**/*.md']] do |md_file|
     unsafe_loader = ->(string) { YAML.load(string) } 
     corpus = md_file.sources.grep(/\.md$/)
     .map do |path|
@@ -35,11 +34,9 @@ file './search_index.json' => ['./corpus.json'] do |t|
     end
 end
 
-task :list_files do
-    file_list = Rake::FileList['_posts/**/*.md'].exclude()
-
-    # Print the list of matched files
-    puts file_list
+task :clean do
+    FileUtils.rm './corpus.json', :force => true
+    FileUtils.rm './search_index.json', :force => true
 end
 
-task :default => ['./corpus.json', './search_index.json']
+task :default  => [:clean, './corpus.json', './search_index.json']

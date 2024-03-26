@@ -1,20 +1,16 @@
 (function () {
-    downloadSearchIndex();
-    downloadAndPopulateCorpus();
-
-    async function downloadSearchIndex() {
-        const response = await fetch("/search_index.json");
+    
+    async function downloadIndexAndCorpus() {
+        var response = await fetch("/search_index.json");
         const search = await response.json();
         window.index = lunr.Index.load(search);
-    }
 
-    async function downloadAndPopulateCorpus() {
-        const response = await fetch("/corpus.json");
+        response = await fetch("/corpus.json");
         const corpus = await response.json();
         window.site_contents = [];
 
         corpus.forEach(element => {
-            var doc = {
+            const doc = {
                 'id': element.id,
                 'content': element.content,
                 'name': element.name,
@@ -37,7 +33,7 @@
         }
 
         results.forEach(result => {
-            var contentItem = window.site_contents.filter(contentItem => contentItem.id === result.ref);
+            const contentItem = window.site_contents.filter(contentItem => contentItem.id === result.ref);
             var snippets = []
 
             Object.keys(result.matchData.metadata).forEach(function (term) {
@@ -48,13 +44,12 @@
             });
 
             const resultElement = buildSearchResult(contentItem[0], snippets);
-            
             resultsArea.append(resultElement);
         });
     }
 
     function generateSnippets(content, positions, maxSnippetLength) {
-        const snippets = [];
+        var snippets = [];
         
         for (const [position, termLength] of positions) {
             
@@ -88,7 +83,7 @@
     }
         
     function buildSearchResult(contentItem, snippets = []) {
-        var listItem = document.createElement('li')
+        const listItem = document.createElement('li')
         
         const a = document.createElement('a')        
         a.href = contentItem.url;
@@ -108,23 +103,22 @@
             
             snippets.forEach(snippet => {
                 const sectionLi = document.createElement("li")
+                sectionUl.appendChild(sectionLi)
 
                 const section = document.createElement("section");
                 sectionLi.appendChild(section)
 
                 const paragraph = document.createElement("p")
-                paragraph.textContent = snippet
                 section.appendChild(paragraph)
-                
+
                 const snippetLink = document.createElement("a")
                 snippetLink.href = contentItem.url + "#:~:text=" + encodeURIComponent(snippet)
-                
                 snippetLink.textContent = "Go to snippet"
-                section.appendChild(snippetLink)
-                
-                sectionLi.appendChild(section)
-                sectionUl.appendChild(sectionLi)
-                
+                paragraph.appendChild(snippetLink)
+
+                const snippetSpan = document.createElement("span")
+                snippetSpan.textContent = "\u00A0" + snippet
+                paragraph.appendChild(snippetSpan)
             }); 
             
             article.appendChild(sectionUl)
@@ -133,15 +127,26 @@
         return listItem;
     }
 
-    const form = document.getElementById('search-form');
-    form.addEventListener('submit', function (event) {
+    document.getElementById('search-form').addEventListener('submit', function (event) {
         event.preventDefault();
 
-        // Your code to handle the form submission goes here
-        // For example, you can access form data using the FormData API:
-        const formData = new FormData(form);
+        const formData = new FormData(event.target);
         const searchTerm = formData.get("search-query")
-        var results = window.index.search(searchTerm)
+        
+        const results = window.index.search(searchTerm)
         renderSearchResults(results)
+    });
+
+    window.addEventListener('load', async function(event) {
+
+        await downloadIndexAndCorpus()
+
+        const formData = new FormData(document.getElementById('search-form'));
+        const searchTerm = formData.get("search-query")
+
+        if (searchTerm) {
+            const results = window.index.search("ireland")
+            renderSearchResults(results)
+        }
     });
 })();
