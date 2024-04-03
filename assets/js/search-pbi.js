@@ -1,15 +1,15 @@
 (function () {
-    
+    const cacheName = 'podscripts';
+
     async function downloadIndexAndCorpus() {
-        var response = await fetch("/search_index.json");
-        const search = await response.json();
-        window.index = lunr.Index.load(search);
+        
+        let responseJson = await download("/search_index.json");
+        window.index = lunr.Index.load(responseJson);
 
-        response = await fetch("/corpus.json");
-        const corpus = await response.json();
+        responseJson = await download("/corpus.json");
+        
         window.site_contents = [];
-
-        corpus.forEach(element => {
+        responseJson.forEach(element => {
             const doc = {
                 'id': element.id,
                 'content': element.content,
@@ -112,7 +112,17 @@
                 section.appendChild(paragraph)
 
                 const snippetLink = document.createElement("a")
-                snippetLink.href = contentItem.url + "#:~:text=" + encodeURIComponent(snippet)
+
+                
+                
+                let scrollToHash = encodeURIComponent(snippet.substring(0, snippet.indexOf("\n")).trim())
+                
+                snippetParts = snippet.split("\n\n")
+                if (snippetParts.length > 0) {
+                    scrollToHash += "," + encodeURIComponent(snippetParts[snippetParts.length - 1].trim())
+                }
+
+                snippetLink.href = contentItem.url + "#:~:text=" + scrollToHash
                 snippetLink.textContent = "Go to snippet"
                 paragraph.appendChild(snippetLink)
 
@@ -149,4 +159,27 @@
             renderSearchResults(results)
         }
     });
+
+    async function download(url) {
+        
+        try {
+            const cache = await caches.open(cacheName);
+            const cachedResponse = await cache.match(url);
+    
+            if (cachedResponse) {
+                return cachedResponse.json();
+            } else {
+                const response = await fetch(url);
+                if (response.ok) {
+                    await cache.put(url, response.clone());
+                    return response.json();
+                } else {
+                    throw new Error(`Failed to fetch ${url}`);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching search index:', error);
+            throw error;
+        }
+    }
 })();

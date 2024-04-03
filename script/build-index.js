@@ -20,7 +20,7 @@ stdin.on('end', function () {
         builder.field('name')
         builder.field('url')
         builder.field('content')
-        builder.field['category']
+        builder.field('category')
         builder.metadataWhitelist = ['position']
 
         corpus.forEach(function (doc) {
