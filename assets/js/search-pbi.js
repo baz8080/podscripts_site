@@ -113,14 +113,18 @@
 
                 const snippetLink = document.createElement("a")
 
-                
-                
-                let scrollToHash = encodeURIComponent(snippet.substring(0, snippet.indexOf("\n")).trim())
-                
+                let scrollToHash = ""
                 snippetParts = snippet.split("\n\n")
+
                 if (snippetParts.length > 0) {
+                    scrollToHash = encodeURIComponent(snippetParts[0])
+                }
+                
+                if (snippetParts.length > 1) {
                     scrollToHash += "," + encodeURIComponent(snippetParts[snippetParts.length - 1].trim())
                 }
+
+                scrollToHash = scrollToHash.replace("-", "%2D")
 
                 snippetLink.href = contentItem.url + "#:~:text=" + scrollToHash
                 snippetLink.textContent = "Go to snippet"
